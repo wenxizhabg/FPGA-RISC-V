@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // Company: <Name>
 //
 // File: Camera.v
@@ -26,9 +26,9 @@ module Camera(
     input wire [7:0] D,     // Bus dữ liệu 8-bit từ camera
 
     // --- CÁC CHÂN NỐI VÀO KHỐI GAUSS/LINE BUFFER ---
-    output reg [7:0] valueOfOutputPixel, // Ảnh xám Y đã lọc
-    output reg outputIsValid             // Cờ báo: 1 = Có data Y hợp lệ
-    output reg rowIsProcess              // Cờ báo: 1 = đang xuất dữ liệu của hàng = HREF
+    output reg rowIsProcess,              // Cờ báo: 1 = đang xuất dữ liệu của hàng = HREF
+    output reg outputIsValid,             // Cờ báo: 1 = Có data Y hợp lệ
+    output reg [7:0] valueOfOutputPixel // Ảnh xám Y đã lọc
 );
 
     // Cờ lật để bỏ qua 1 xung, lấy 1 xung
@@ -65,4 +65,3 @@ module Camera(
     end
 
 endmodule
-
