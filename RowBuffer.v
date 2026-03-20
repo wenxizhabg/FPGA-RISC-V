@@ -19,8 +19,8 @@
 //`timescale <time_units> / <precision>
 
 module RowBuffer #(
-    // Kích thước tối đa cấp phát cho Block RAM (Ảnh VGA là 640 nên 1024 là quá dư dả)
-    parameter MAX_WIDTH = 1024,  
+    // Kích thước tối đa cấp phát cho Block RAM (đô rộng Ảnh VGA là 640)
+    parameter MAX_WIDTH = 640,  
     parameter DATA_WIDTH = 8    
 )(
     input wire pixelClock,
@@ -30,12 +30,13 @@ module RowBuffer #(
     input wire inputIsValid,                          // Cờ báo có điểm ảnh mới hợp lệ truyền tới
     input wire [DATA_WIDTH-1:0] valueOfInputPixel,    // Điểm ảnh đầu vào
     
+    output reg rowIsProcessO,                         // Đẩy cờ trạng thái hàng đi tiếp
+    output reg outputIsValid,                         // Cờ báo ma trận 3x3 đã sẵn sàng
+    
     output reg [DATA_WIDTH-1:0] p11, p12, p13,        // Hàng trên cùng (Hàng n-2)
     output reg [DATA_WIDTH-1:0] p21, p22, p23,        // Hàng giữa (Hàng n-1)
-    output reg [DATA_WIDTH-1:0] p31, p32, p33,        // Hàng dưới cùng (Hàng n hiện tại)
+    output reg [DATA_WIDTH-1:0] p31, p32, p33        // Hàng dưới cùng (Hàng n hiện tại)
     
-    output reg outputIsValid,                         // Cờ báo ma trận 3x3 đã sẵn sàng
-    output reg rowIsProcessO                          // Đẩy cờ trạng thái hàng đi tiếp
 );
 
     // 1. Khai báo 2 bộ đệm hàng (Trình biên dịch sẽ tự động map vào Block RAM)
@@ -102,3 +103,4 @@ module RowBuffer #(
     end
 
 endmodule
+
