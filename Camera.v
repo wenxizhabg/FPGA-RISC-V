@@ -26,6 +26,7 @@ module Camera(
     input wire [7:0] D,     // Bus dữ liệu 8-bit từ camera
 
     // --- CÁC CHÂN NỐI VÀO KHỐI GAUSS/LINE BUFFER ---
+    output reg newFrameIsPrepare,         // Cờ báo: 1 = đã kết thúc frame cũ, chuẩn bị cho frame mới.
     output reg rowIsProcess,              // Cờ báo: 1 = đang xuất dữ liệu của hàng = HREF
     output reg outputIsValid,             // Cờ báo: 1 = Có data Y hợp lệ
     output reg [7:0] valueOfOutputPixel // Ảnh xám Y đã lọc
@@ -36,6 +37,8 @@ module Camera(
 
     // Toàn bộ hệ thống đập theo nhịp PCLK của camera
     always @(posedge PCLK) begin
+        newFrameIsPrepare <= VSYNC;
+        
         // 1. Nếu VSYNC lên mức cao (Camera đang nghỉ giữa 2 khung hình)
         if (VSYNC == 1'b1) begin
             byte_toggle <= 1'b0;
