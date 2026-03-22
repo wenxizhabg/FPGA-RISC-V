@@ -24,12 +24,13 @@ module RowBuffer #(
     parameter DATA_WIDTH = 8    
 )(
     input wire pixelClock,
-    input wire reset,                                 // Reset đồng bộ (Tích cực mức cao)
     
+    input wire newFrameIsPrepareI,                    // Cờ báo chuẩn bị ảnh mới                          
     input wire rowIsProcessI,                         // Cờ báo đang xử lý trong 1 hàng
     input wire inputIsValid,                          // Cờ báo có điểm ảnh mới hợp lệ truyền tới
     input wire [DATA_WIDTH-1:0] valueOfInputPixel,    // Điểm ảnh đầu vào
     
+    output reg newFrameIsPrepareO,
     output reg rowIsProcessO,                         // Đẩy cờ trạng thái hàng đi tiếp
     output reg outputIsValid,                         // Cờ báo ma trận 3x3 đã sẵn sàng
     
@@ -48,7 +49,7 @@ module RowBuffer #(
 
     // QUY TRÌNH 1: Dịch dữ liệu và Quản lý con trỏ (Data Path)
     always @(posedge pixelClock) begin
-        if (reset == 1'b1) begin
+        if (newFrameIsPrepareI == 1'b1) begin
             col_ptr <= 0;
             {p11, p12, p13} <= 24'b0;
             {p21, p22, p23} <= 24'b0;
@@ -81,7 +82,9 @@ module RowBuffer #(
 
     // QUY TRÌNH 2: Quản lý các cờ trạng thái (Control Path)
     always @(posedge pixelClock) begin
-        if (reset == 1'b1) begin
+        newFrameIsPrepareO <= newFrameIsPrepareI;
+
+        if (newFrameIsPrepareI == 1'b1) begin
             outputIsValid <= 1'b0;
             rowIsProcessO <= 1'b0;
         end else begin
