@@ -1,3 +1,22 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Company: <Name>
+//
+// File: SobelFilter.v
+// File history:
+//      <Revision number>: <Date>: <Comments>
+//      <Revision number>: <Date>: <Comments>
+//      <Revision number>: <Date>: <Comments>
+//
+// Description: 
+//
+// <Description here>
+//
+// Targeted device: <Family::PolarFireSoC> <Die::MPFS095T> <Package::FCSG325>
+// Author: <Name>
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+//`timescale <time_units> / <precision>
 module SobelFilter(
     input wire pixelClock, 
     input wire PRESETN,                               // 1. Bổ sung chân Reset (Tích cực mức thấp)
