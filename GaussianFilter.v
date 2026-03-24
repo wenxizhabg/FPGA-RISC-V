@@ -16,9 +16,9 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////// 
 
-//`timescale <time_units> / <precision>
 module GaussianFilter(
     input wire pixelClock, 
+    input wire PRESETN,                               // 1. Bổ sung chân Reset (Tích cực mức thấp)
     
     // --- Giao tiếp nhận ma trận 3x3 từ RowBuffering ---
     input wire newFrameIsPrepareI,                    // Cờ báo chuẩn bị ảnh mới                          
@@ -31,12 +31,12 @@ module GaussianFilter(
     
     // --- Giao tiếp ngõ ra đã làm mịn ---
     output reg newFrameIsPrepareO,
-    output reg rowIsProcessO,                        // Đẩy cờ trạng thái hàng đi tiếp
+    output reg rowIsProcessO,                         // Đẩy cờ trạng thái hàng đi tiếp
     output reg outputIsValid,                         // Cờ báo điểm ảnh ngõ ra hợp lệ
-    output reg [7:0] valueOfOutputPixel              // Điểm ảnh đã lọc Gauss
+    output reg [7:0] valueOfOutputPixel               // Điểm ảnh đã lọc Gauss
 );
 
-    // 1. DATAPATH: Mạch tổ hợp tính toán nặng (Combinational Logic)
+    // 1. DATAPATH: Mạch tổ hợp tính toán cứng (Combinational Logic)
     // Dùng wire 12-bit để chứa tổng, tránh bị tràn số khi cộng 9 con số 8-bit
     // Tối đa: 16 * 255 = 4080 (Vừa đủ trong 12-bit: max 4095)
     wire [11:0] sum; 
@@ -51,26 +51,34 @@ module GaussianFilter(
                  p31 + (p32 << 1) + p33;
 
     // 2. CONTROL UNIT & OUTPUT REGISTER: Mạch tuần tự chốt dữ liệu an toàn
-    always @(posedge pixelClock) begin
-        newFrameIsPrepareO <= newFrameIsPrepareI;
-        
-        if (newFrameIsPrepareI == 1'b1) begin
+    always @(posedge pixelClock or negedge PRESETN) begin
+        // Trạng thái khởi động: Dọn sạch thanh ghi khi có tín hiệu Reset
+        if (!PRESETN) begin
+            newFrameIsPrepareO <= 1'b0;
+            rowIsProcessO      <= 1'b0;
+            outputIsValid      <= 1'b0;
             valueOfOutputPixel <= 8'b0;
-            outputIsValid <= 1'b0;
-            rowIsProcessO <= 1'b0;
-        end else begin
-            // Luôn truyền trạng thái Hàng đi tiếp sang khối sau (Sobel)
-            rowIsProcessO <= rowIsProcessI;
+        end 
+        else begin
+            newFrameIsPrepareO <= newFrameIsPrepareI;
             
-            // Chỉ chốt kết quả tính toán khi ma trận ngõ vào là hợp lệ
-            if (inputIsValid == 1'b1) begin
-                // Chia 16 bằng phép dịch phải 4 bit (sum >> 4)
-                // Phép gán này chốt dữ liệu vào thanh ghi, tăng độ ổn định timing
-                valueOfOutputPixel <= sum >> 4; 
-                outputIsValid <= 1'b1;         // Báo cho khối sau lấy data
-            end else begin
-                // Nếu ngõ vào là rác, hạ cờ Valid ngõ ra
+            if (newFrameIsPrepareI == 1'b1) begin
+                valueOfOutputPixel <= 8'b0;
                 outputIsValid <= 1'b0;
+                rowIsProcessO <= 1'b0;
+            end else begin
+                // Luôn truyền trạng thái Hàng đi tiếp sang khối sau (Sobel)
+                rowIsProcessO <= rowIsProcessI;
+                
+                // Chỉ chốt kết quả tính toán khi ma trận ngõ vào là hợp lệ
+                if (inputIsValid == 1'b1) begin
+                    // Chia 16 bằng phép dịch phải 4 bit (sum >> 4)
+                    valueOfOutputPixel <= sum >> 4; 
+                    outputIsValid <= 1'b1;         // Báo cho khối sau lấy data
+                end else begin
+                    // Nếu ngõ vào là rác, hạ cờ Valid ngõ ra
+                    outputIsValid <= 1'b0;
+                end
             end
         end
     end
