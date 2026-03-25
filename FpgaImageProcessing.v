@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Created by SmartDesign Tue Mar 24 15:37:45 2026
+// Created by SmartDesign Wed Mar 25 23:55:38 2026
 // Version: 2025.1 2025.1.0.14
 //////////////////////////////////////////////////////////////////////
 
@@ -13,6 +13,7 @@ module FpgaImageProcessing(
     PRESETN,
     VSYNC,
     pixelClock,
+    sampleRate,
     threshold,
     // Outputs
     finalDensityCount,
@@ -27,6 +28,7 @@ input         HREF;
 input         PRESETN;
 input         VSYNC;
 input         pixelClock;
+input  [15:0] sampleRate;
 input  [7:0]  threshold;
 //--------------------------------------------------------------------
 // Output
@@ -89,6 +91,7 @@ wire   [7:0]  RowBuffer_1_p31;
 wire   [7:0]  RowBuffer_1_p32;
 wire   [7:0]  RowBuffer_1_p33;
 wire          RowBuffer_1_rowIsProcessO;
+wire   [15:0] sampleRate;
 wire          SobelFilter_0_newFrameIsPrepareO;
 wire          SobelFilter_0_outputIsValid;
 wire          SobelFilter_0_rowIsProcessO;
@@ -130,9 +133,34 @@ DensityCounter DensityCounter_0(
         .newFrameIsPrepareNow ( DilationFilter_0_newFrameIsPrepareO ),
         .inputIsValid         ( DilationFilter_0_outputIsValid ),
         .valueOfInputPixel    ( DilationFilter_0_valueOfOutputPixel ),
+        .sampleRate           ( sampleRate ),
         // Outputs
         .frameIsFinish        ( frameIsFinish_net_0 ),
         .finalDensityCount    ( finalDensityCount_net_0 ) 
+        );
+
+//--------RowBuffer
+RowBuffer DilationBuffer(
+        // Inputs
+        .pixelClock         ( pixelClock ),
+        .PRESETN            ( PRESETN ),
+        .newFrameIsPrepareI ( SobelFilter_0_newFrameIsPrepareO ),
+        .rowIsProcessI      ( SobelFilter_0_rowIsProcessO ),
+        .inputIsValid       ( SobelFilter_0_outputIsValid ),
+        .valueOfInputPixel  ( SobelFilter_0_valueOfOutputPixel ),
+        // Outputs
+        .newFrameIsPrepareO ( RowBuffer_1_0_newFrameIsPrepareO ),
+        .rowIsProcessO      ( RowBuffer_1_0_rowIsProcessO ),
+        .outputIsValid      ( RowBuffer_1_0_outputIsValid ),
+        .p11                ( RowBuffer_1_0_p11 ),
+        .p12                ( RowBuffer_1_0_p12 ),
+        .p13                ( RowBuffer_1_0_p13 ),
+        .p21                ( RowBuffer_1_0_p21 ),
+        .p22                ( RowBuffer_1_0_p22 ),
+        .p23                ( RowBuffer_1_0_p23 ),
+        .p31                ( RowBuffer_1_0_p31 ),
+        .p32                ( RowBuffer_1_0_p32 ),
+        .p33                ( RowBuffer_1_0_p33 ) 
         );
 
 //--------DilationFilter
@@ -140,10 +168,10 @@ DilationFilter DilationFilter_0(
         // Inputs
         .pixelClock         ( pixelClock ),
         .PRESETN            ( PRESETN ),
-        .threshold          ( threshold ),
         .newFrameIsPrepareI ( RowBuffer_1_0_newFrameIsPrepareO ),
         .rowIsProcessI      ( RowBuffer_1_0_rowIsProcessO ),
         .inputIsValid       ( RowBuffer_1_0_outputIsValid ),
+        .threshold          ( threshold ),
         .p11                ( RowBuffer_1_0_p11 ),
         .p12                ( RowBuffer_1_0_p12 ),
         .p13                ( RowBuffer_1_0_p13 ),
@@ -158,6 +186,30 @@ DilationFilter DilationFilter_0(
         .rowIsProcessO      (  ),
         .outputIsValid      ( DilationFilter_0_outputIsValid ),
         .valueOfOutputPixel ( DilationFilter_0_valueOfOutputPixel ) 
+        );
+
+//--------RowBuffer
+RowBuffer GaussianBuffer(
+        // Inputs
+        .pixelClock         ( pixelClock ),
+        .PRESETN            ( PRESETN ),
+        .newFrameIsPrepareI ( Camera_0_newFrameIsPrepare ),
+        .rowIsProcessI      ( Camera_0_rowIsProcess ),
+        .inputIsValid       ( Camera_0_outputIsValid ),
+        .valueOfInputPixel  ( Camera_0_valueOfOutputPixel ),
+        // Outputs
+        .newFrameIsPrepareO ( RowBuffer_0_newFrameIsPrepareO ),
+        .rowIsProcessO      ( RowBuffer_0_rowIsProcessO ),
+        .outputIsValid      ( RowBuffer_0_outputIsValid ),
+        .p11                ( RowBuffer_0_p11 ),
+        .p12                ( RowBuffer_0_p12 ),
+        .p13                ( RowBuffer_0_p13 ),
+        .p21                ( RowBuffer_0_p21 ),
+        .p22                ( RowBuffer_0_p22 ),
+        .p23                ( RowBuffer_0_p23 ),
+        .p31                ( RowBuffer_0_p31 ),
+        .p32                ( RowBuffer_0_p32 ),
+        .p33                ( RowBuffer_0_p33 ) 
         );
 
 //--------GaussianFilter
@@ -185,31 +237,7 @@ GaussianFilter GaussianFilter_0(
         );
 
 //--------RowBuffer
-RowBuffer RowBuffer_0(
-        // Inputs
-        .pixelClock         ( pixelClock ),
-        .PRESETN            ( PRESETN ),
-        .newFrameIsPrepareI ( Camera_0_newFrameIsPrepare ),
-        .rowIsProcessI      ( Camera_0_rowIsProcess ),
-        .inputIsValid       ( Camera_0_outputIsValid ),
-        .valueOfInputPixel  ( Camera_0_valueOfOutputPixel ),
-        // Outputs
-        .newFrameIsPrepareO ( RowBuffer_0_newFrameIsPrepareO ),
-        .rowIsProcessO      ( RowBuffer_0_rowIsProcessO ),
-        .outputIsValid      ( RowBuffer_0_outputIsValid ),
-        .p11                ( RowBuffer_0_p11 ),
-        .p12                ( RowBuffer_0_p12 ),
-        .p13                ( RowBuffer_0_p13 ),
-        .p21                ( RowBuffer_0_p21 ),
-        .p22                ( RowBuffer_0_p22 ),
-        .p23                ( RowBuffer_0_p23 ),
-        .p31                ( RowBuffer_0_p31 ),
-        .p32                ( RowBuffer_0_p32 ),
-        .p33                ( RowBuffer_0_p33 ) 
-        );
-
-//--------RowBuffer
-RowBuffer RowBuffer_1(
+RowBuffer SobelBuffer(
         // Inputs
         .pixelClock         ( pixelClock ),
         .PRESETN            ( PRESETN ),
@@ -230,30 +258,6 @@ RowBuffer RowBuffer_1(
         .p31                ( RowBuffer_1_p31 ),
         .p32                ( RowBuffer_1_p32 ),
         .p33                ( RowBuffer_1_p33 ) 
-        );
-
-//--------RowBuffer
-RowBuffer RowBuffer_1_0(
-        // Inputs
-        .pixelClock         ( pixelClock ),
-        .PRESETN            ( PRESETN ),
-        .newFrameIsPrepareI ( SobelFilter_0_newFrameIsPrepareO ),
-        .rowIsProcessI      ( SobelFilter_0_rowIsProcessO ),
-        .inputIsValid       ( SobelFilter_0_outputIsValid ),
-        .valueOfInputPixel  ( SobelFilter_0_valueOfOutputPixel ),
-        // Outputs
-        .newFrameIsPrepareO ( RowBuffer_1_0_newFrameIsPrepareO ),
-        .rowIsProcessO      ( RowBuffer_1_0_rowIsProcessO ),
-        .outputIsValid      ( RowBuffer_1_0_outputIsValid ),
-        .p11                ( RowBuffer_1_0_p11 ),
-        .p12                ( RowBuffer_1_0_p12 ),
-        .p13                ( RowBuffer_1_0_p13 ),
-        .p21                ( RowBuffer_1_0_p21 ),
-        .p22                ( RowBuffer_1_0_p22 ),
-        .p23                ( RowBuffer_1_0_p23 ),
-        .p31                ( RowBuffer_1_0_p31 ),
-        .p32                ( RowBuffer_1_0_p32 ),
-        .p33                ( RowBuffer_1_0_p33 ) 
         );
 
 //--------SobelFilter
