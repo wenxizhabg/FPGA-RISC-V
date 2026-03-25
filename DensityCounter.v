@@ -20,46 +20,59 @@
 
 module DensityCounter (
     input wire pixelClock,
-    input wire PRESETN,                    // 1. Bổ sung chân Reset (Tích cực mức thấp)
+    input wire PRESETN,         
     
-    // Giao tiếp từ đuôi khối DilationFilter
+    // Giao ti?p t? duôi kh?i DilationFilter
     input wire newFrameIsPrepareNow,        
     input wire inputIsValid,
     input wire [7:0] valueOfInputPixel,
     
-    // Thanh ghi ngõ ra để CPU RISC-V đọc
-    output reg frameIsFinish,              // Cờ ngắt (Interrupt) báo xong frame
+    // C?u hình t? CPU (N?i t? Wrapper xu?ng)
+    // N?u xe ít, CPU g?i s? l?n (VD: 500). N?u xe dông, g?i s? nh? (VD: 1)
+    input wire [15:0] sampleRate, 
+
+    // Thanh ghi ngõ ra t?i FIFO_DENSITY
+    output reg frameIsFinish,              // Ch? b?t khi d? s? khung hình c?n l?y m?u
     output reg [31:0] finalDensityCount      
 );
 
-    reg [18:0] counter;
+    reg [18:0] pixelCounter;
+    reg [15:0] finishFrameCounter; // B? tích luy s? khung hình
     reg newFrameIsPrepareLast;
 
     always @(posedge pixelClock or negedge PRESETN) begin
         if (!PRESETN) begin
-            // Dọn sạch toàn bộ thanh ghi khi khởi động
             newFrameIsPrepareLast <= 1'b0;
-            counter               <= 19'd0;
+            pixelCounter               <= 19'd0;
+            finishFrameCounter              <= 16'd0;
             finalDensityCount     <= 32'd0;
             frameIsFinish         <= 1'b0;
         end 
         else begin
-            // 1. Cập nhật quá khứ để bắt sườn
             newFrameIsPrepareLast <= newFrameIsPrepareNow;
             
-            // 2. Bắt sườn lên trực tiếp bên trong khối đồng bộ (Kết thúc Frame cũ)
+            // Phát hi?n k?t thúc 1 khung hình (C?nh lên c?a PrepareNow)
             if (newFrameIsPrepareNow == 1'b1 && newFrameIsPrepareLast == 1'b0) begin
-                // Đệm thêm 13 bit 0 vào biến đếm 19-bit để ép chuẩn thành 32-bit cho bus APB
-                finalDensityCount <= {13'd0, counter}; 
-                counter           <= 19'd0; // Reset bộ đếm cho frame mới
-                frameIsFinish     <= 1'b1;  // Bật cờ ngắt lên 1 nhịp
+                
+                if (finishFrameCounter >= sampleRate) begin
+                    // Ðã d? chu k? l?y m?u -> Xu?t d? li?u và báo ng?t
+                    finalDensityCount <= {13'd0, pixelCounter}; 
+                    frameIsFinish     <= 1'b1;  
+                    finishFrameCounter          <= 16'd0; // Reset b? d?m khung hình
+                end 
+                else begin
+                    finishFrameCounter          <= finishFrameCounter + 1'b1;
+                    frameIsFinish     <= 1'b0;
+                end
+                
+                pixelCounter <= 19'd0; // Luôn reset b? d?m pixel sau m?i khung hình
             end 
             else begin
-                frameIsFinish <= 1'b0;  // Hạ cờ ngắt xuống ngay lập tức
+                frameIsFinish <= 1'b0; 
                 
-                // 3. Logic đếm điểm ảnh trắng (Chỉ đếm khi KHÔNG phải lúc reset)
+                // Ð?m di?m ?nh tr?ng trong khung hình hi?n t?i
                 if (inputIsValid == 1'b1 && valueOfInputPixel == 8'd255) begin
-                    counter <= counter + 1'b1;
+                    pixelCounter <= pixelCounter + 1'b1;
                 end
             end
         end
