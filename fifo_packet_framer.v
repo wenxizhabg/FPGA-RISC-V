@@ -23,7 +23,7 @@ module fifo_packet_framer (
     input  wire        rst_n,            // Reset đồng bộ
     
     // Tín hiệu từ module Camera.v
-    input  wire        i_frameIsProcess,
+    input  wire        i_vsync,
     input  wire        i_rowIsProcess,
     input  wire        i_outputIsValid,
     input  wire [7:0]  i_pixel_data,
@@ -44,13 +44,13 @@ module fifo_packet_framer (
             vsync_d        <= 1'b1;
             rowIsProcess_d <= 1'b0;
         end else begin
-            vsync_d        <= i_frameIsProcess;
+            vsync_d        <= i_vsync;
             rowIsProcess_d <= i_rowIsProcess;
         end
     end
 
     // Tạo các xung kích hoạt chỉ tồn tại trong đúng 1 chu kỳ clock
-    wire vsync_fall = (vsync_d == 1'b1 && i_frameIsProcess == 1'b0);
+    wire vsync_fall = (vsync_d == 1'b1 && i_vsync == 1'b0);
     wire row_fall   = (rowIsProcess_d == 1'b1 && i_rowIsProcess == 1'b0);
 
     // ==========================================
